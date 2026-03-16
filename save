@@ -3,21 +3,6 @@ local httpService = game:GetService('HttpService')
 local SaveManager = {} do
     SaveManager.Folder = 'Mana'
     SaveManager.Ignore = {}
-    
-    -- Helper to get all .json files in the settings folder
-    function SaveManager:RefreshConfigList()
-        self:BuildFolderTree()
-        local files = listfiles(self.Folder .. '/settings')
-        local configs = {}
-        for _, file in next, files do
-            if file:sub(-5) == ".json" then
-                -- Extract just the filename without path or extension
-                local name = file:match("([^/%\\]+)%.json$")
-                table.insert(configs, name)
-            end
-        end
-        return configs
-    end
 
     function SaveManager:BuildFolderTree()
         local paths = { self.Folder, self.Folder .. '/settings' }
@@ -26,11 +11,25 @@ local SaveManager = {} do
         end
     end
 
+    function SaveManager:RefreshConfigList()
+        self:BuildFolderTree()
+        local files = listfiles(self.Folder .. '/settings')
+        local configs = {}
+        for _, file in next, files do
+            if file:sub(-5) == ".json" then
+                local name = file:match("([^/%\\]+)%.json$")
+                table.insert(configs, name)
+            end
+        end
+        return configs
+    end
+
     function SaveManager:Save(name)
         local fullPath = self.Folder .. '/settings/' .. name .. '.json'
         local data = { objects = {} }
 
         for flag, value in next, library.flags do
+            -- Ignore the config system's own flags
             if self.Ignore[flag] or flag == "cfgname" or flag == "selectedcfg" then continue end
             
             local dataType = "Toggle"
@@ -69,7 +68,7 @@ local SaveManager = {} do
                 finalValue = Enum[type][name]
             end
 
-            -- Find the actual UI object in library.objects to call :Set()
+            -- Direct lookup in library.objects for the :Set() function
             for _, obj in next, library.objects do
                 if typeof(obj) == "table" and obj.flag == data.idx and obj.Set then
                     obj:Set(finalValue)
@@ -79,6 +78,13 @@ local SaveManager = {} do
         end
         return true
     end
+
+    function SaveManager:Delete(name)
+        local file = self.Folder .. '/settings/' .. name .. '.json'
+        if isfile(file) then delfile(file) end
+    end
+
+    SaveManager:BuildFolderTree()
 end
 
-return SaveManager
+return SaveManager -- Crucial for use in other scripts
