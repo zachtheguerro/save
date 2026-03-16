@@ -80,3 +80,5 @@ local SaveManager = {} do
         return true
     end
 end
+
+return SaveManager
