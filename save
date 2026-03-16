@@ -1,7 +1,7 @@
 local httpService = game:GetService('HttpService')
 
 local SaveManager = {} do
-    SaveManager.Folder = 'FishyThemes'
+    SaveManager.Folder = 'Mana'
     SaveManager.Ignore = {}
     SaveManager.Library = nil
     
