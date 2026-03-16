@@ -3,78 +3,20 @@ local httpService = game:GetService('HttpService')
 local SaveManager = {} do
     SaveManager.Folder = 'Mana'
     SaveManager.Ignore = {}
-    SaveManager.Library = nil
     
-    -- Parsers handle how different data types are saved/loaded
-    SaveManager.Parser = {
-        Toggle = {
-            Save = function(idx, value) 
-                return { type = 'Toggle', idx = idx, value = value } 
-            end,
-            Load = function(idx, data)
-                if library.flags[idx] ~= nil then 
-                    -- Calls the flag's update function if your library supports it
-                    library.flags[idx] = data.value
-                end
-            end,
-        },
-        Slider = {
-            Save = function(idx, value)
-                return { type = 'Slider', idx = idx, value = value }
-            end,
-            Load = function(idx, data)
-                if library.flags[idx] ~= nil then 
-                    library.flags[idx] = data.value
-                end
-            end,
-        },
-        Dropdown = {
-            Save = function(idx, value)
-                return { type = 'Dropdown', idx = idx, value = value }
-            end,
-            Load = function(idx, data)
-                if library.flags[idx] ~= nil then 
-                    library.flags[idx] = data.value
-                end
-            end,
-        },
-        ColorPicker = {
-            Save = function(idx, value)
-                -- Converts Color3 to a Hex string for JSON safety
-                return { type = 'ColorPicker', idx = idx, value = value:ToHex() }
-            end,
-            Load = function(idx, data)
-                if library.flags[idx] ~= nil then 
-                    library.flags[idx] = Color3.fromHex(data.value)
-                end
-            end,
-        },
-        Keybind = {
-            Save = function(idx, value)
-                -- Saves the KeyCode or UserInputType as a string
-                return { type = 'Keybind', idx = idx, value = tostring(value) }
-            end,
-            Load = function(idx, data)
-                if library.flags[idx] ~= nil then
-                    local key
-                    if data.value:find("Enum.KeyCode.") then
-                        key = Enum.KeyCode[data.value:gsub("Enum.KeyCode.", "")]
-                    elseif data.value:find("Enum.UserInputType.") then
-                        key = Enum.UserInputType[data.value:gsub("Enum.UserInputType.", "")]
-                    end
-                    library.flags[idx] = key
-                end
-            end,
-        },
-    }
-
-    function SaveManager:SetLibrary(lib)
-        self.Library = lib
-    end
-
-    function SaveManager:SetFolder(folder)
-        self.Folder = folder
+    -- Helper to get all .json files in the settings folder
+    function SaveManager:RefreshConfigList()
         self:BuildFolderTree()
+        local files = listfiles(self.Folder .. '/settings')
+        local configs = {}
+        for _, file in next, files do
+            if file:sub(-5) == ".json" then
+                -- Extract just the filename without path or extension
+                local name = file:match("([^/%\\]+)%.json$")
+                table.insert(configs, name)
+            end
+        end
+        return configs
     end
 
     function SaveManager:BuildFolderTree()
@@ -88,24 +30,20 @@ local SaveManager = {} do
         local fullPath = self.Folder .. '/settings/' .. name .. '.json'
         local data = { objects = {} }
 
-        for idx, value in next, library.flags do
-            if self.Ignore[idx] then continue end
+        for flag, value in next, library.flags do
+            if self.Ignore[flag] or flag == "cfgname" or flag == "selectedcfg" then continue end
             
-            -- Determine the type based on value or index naming conventions
             local dataType = "Toggle"
-            if typeof(value) == "Color3" then
-                dataType = "ColorPicker"
-            elseif typeof(value) == "number" then
-                dataType = "Slider"
-            elseif typeof(value) == "EnumItem" or idx:find("_KEY") then
-                dataType = "Keybind"
-            elseif typeof(value) == "table" then
-                dataType = "Dropdown"
-            end
+            if typeof(value) == "Color3" then dataType = "ColorPicker"
+            elseif typeof(value) == "number" then dataType = "Slider"
+            elseif typeof(value) == "EnumItem" then dataType = "Keybind"
+            elseif typeof(value) == "table" then dataType = "Dropdown" end
 
-            if self.Parser[dataType] then
-                table.insert(data.objects, self.Parser[dataType].Save(idx, value))
-            end
+            local savedValue = value
+            if dataType == "ColorPicker" then savedValue = value:ToHex()
+            elseif dataType == "Keybind" then savedValue = tostring(value) end
+
+            table.insert(data.objects, { type = dataType, idx = flag, value = savedValue })
         end
 
         local success, encoded = pcall(httpService.JSONEncode, httpService, data)
@@ -113,23 +51,32 @@ local SaveManager = {} do
             writefile(fullPath, encoded)
             return true
         end
-        return false, "Encoding error"
     end
 
     function SaveManager:Load(name)
         local file = self.Folder .. '/settings/' .. name .. '.json'
-        if not isfile(file) then return false, "File not found" end
+        if not isfile(file) then return false end
 
         local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
-        if not success then return false, "Decode error" end
+        if not success then return false end
 
-        for _, object in next, decoded.objects do
-            if self.Parser[object.type] then
-                self.Parser[object.type].Load(object.idx, object)
+        for _, data in next, decoded.objects do
+            local finalValue = data.value
+            if data.type == "ColorPicker" then
+                finalValue = Color3.fromHex(data.value)
+            elseif data.type == "Keybind" then
+                local type, name = data.value:match("Enum%.(%w+)%.(.+)")
+                finalValue = Enum[type][name]
+            end
+
+            -- Find the actual UI object in library.objects to call :Set()
+            for _, obj in next, library.objects do
+                if typeof(obj) == "table" and obj.flag == data.idx and obj.Set then
+                    obj:Set(finalValue)
+                    break
+                end
             end
         end
         return true
     end
 end
-
-return SaveManager
