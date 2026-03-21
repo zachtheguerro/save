@@ -50,64 +50,59 @@ function ConfigManager:Save(name)
 end
 
 function ConfigManager:Load(data)
-    for flag, saved in pairs(data) do
-        local item = self.Items[flag]
+	for flag, saved in pairs(data) do
+		local item = self.Items[flag]
 
-        if item and saved and item.type == saved.type then
-            elseif item.type == "colorpicker" then
-                if saved.value and saved.value.r and saved.value.g and saved.value.b then
-                    local loadedColor = Color3.fromRGB(saved.value.r, saved.value.g, saved.value.b)
-                    local loadedAlpha = saved.alpha or 0
+		if item and saved and item.type == saved.type then
 
-                    item:set(loadedColor, loadedAlpha)
+			if saved.type == "colorpicker" then
+				if saved.value and saved.value.r and saved.value.g and saved.value.b then
+					local loadedColor = Color3.fromRGB(saved.value.r, saved.value.g, saved.value.b)
+					local loadedAlpha = saved.alpha or 0
 
-                    if item.setrainbow then
-                        item:setrainbow(saved.rainbow == true)
-                    end
-                end
-                if saved.value and saved.value.r and saved.value.g and saved.value.b then
-                    item:set(Color3.fromRGB(saved.value.r, saved.value.g, saved.value.b))
+					item:set(loadedColor, loadedAlpha)
 
-                    if item.setrainbow then
-                        item:setrainbow(saved.rainbow == true)
-                    end
-                end
+					if item.setrainbow then
+						item:setrainbow(saved.rainbow == true)
+					end
+				end
 
-            elseif saved.type == "keybind" then
-                if item.setbind and saved.key then
-                    item:setbind(saved.key)
-                end
+			elseif saved.type == "keybind" then
+				if item.setbind and saved.key then
+					item:setbind(saved.key)
+				end
 
-                if item.setmode and saved.mode then
-                    item:setmode(saved.mode)
-                end
+				if item.setmode and saved.mode then
+					item:setmode(saved.mode)
+				end
 
-                if item.set and type(saved.state) == "boolean" then
-                    item:set(saved.state)
-                end
+				if item.set and type(saved.state) == "boolean" then
+					item:set(saved.state)
+				end
 
-            elseif saved.type == "toggle" then
-                if item.set and type(saved.value) == "boolean" then
-                    item:set(saved.value)
-                end
+			elseif saved.type == "toggle" then
+				if item.set and type(saved.value) == "boolean" then
+					item:set(saved.value)
+				end
 
-            elseif saved.type == "slider" then
-                if item.set and type(saved.value) == "number" then
-                    item:set(saved.value)
-                end
+			elseif saved.type == "slider" then
+				if item.set and type(saved.value) == "number" then
+					item:set(saved.value)
+				end
 
-            elseif saved.type == "textbox" then
-                if item.set and type(saved.value) == "string" then
-                    item:set(saved.value)
-                end
+			elseif saved.type == "textbox" then
+				if item.set and type(saved.value) == "string" then
+					item:set(saved.value)
+				end
 
-            elseif saved.type == "dropdown" then
-                if item.set then
-                    item:set(saved.value)
-                end
-            end
-        end
-    end
+			elseif saved.type == "dropdown" then
+				if item.set then
+					item:set(saved.value)
+				end
+			end
+
+		end
+	end
 end
 
 function ConfigManager:EnsureFolder()
