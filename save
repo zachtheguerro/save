@@ -1,90 +1,270 @@
-local httpService = game:GetService('HttpService')
+local ConfigManager = {}
+ConfigManager.Items = {}
+ConfigManager.Folder = "Mana/settings"
 
-local SaveManager = {} do
-    SaveManager.Folder = 'Mana'
-    SaveManager.Ignore = {}
+function ConfigManager:Register(flag, item)
+    if not flag or flag == "" then return end
+    self.Items[flag] = item
+end
 
-    function SaveManager:BuildFolderTree()
-        local paths = { self.Folder, self.Folder .. '/settings' }
-        for _, path in next, paths do
-            if not isfolder(path) then makefolder(path) end
-        end
+function ConfigManager:SerializeValue(item)
+    if item.type == "toggle" then
+        return { type = "toggle", value = item.value }
+    elseif item.type == "slider" then
+        return { type = "slider", value = item.value }
+    elseif item.type == "dropdown" then
+        return { type = "dropdown", value = item.value }
+    elseif item.type == "textbox" then
+        return { type = "textbox", value = item.value }
+	elseif item.type == "keybind" then
+		return {type = "keybind", key = item.key and tostring(item.key) or nil, mode = item.mode, state = item.value}
+	elseif item.type == "colorpicker" then
+		return {
+			type = "colorpicker",
+			value = {
+				r = math.floor(item.value.R * 255),
+				g = math.floor(item.value.G * 255),
+				b = math.floor(item.value.B * 255)
+			},
+			rainbow = item.rainbow == true
+		}
+	end
+end
+
+function ConfigManager:Save(name)
+    local data = {}
+
+    for flag, item in pairs(self.Items) do
+        data[flag] = self:SerializeValue(item)
     end
 
-    function SaveManager:RefreshConfigList()
-        self:BuildFolderTree()
-        local files = listfiles(self.Folder .. '/settings')
-        local configs = {}
-        for _, file in next, files do
-            if file:sub(-5) == ".json" then
-                local name = file:match("([^/%\\]+)%.json$")
-                table.insert(configs, name)
-            end
-        end
-        return configs
-    end
+    return data
+end
 
-    function SaveManager:Save(name)
-        local fullPath = self.Folder .. '/settings/' .. name .. '.json'
-        local data = { objects = {} }
+function ConfigManager:Load(data)
+    for flag, saved in pairs(data) do
+        local item = self.Items[flag]
 
-        for flag, value in next, library.flags do
-            -- Ignore the config system's own flags
-            if self.Ignore[flag] or flag == "cfgname" or flag == "selectedcfg" then continue end
-            
-            local dataType = "Toggle"
-            if typeof(value) == "Color3" then dataType = "ColorPicker"
-            elseif typeof(value) == "number" then dataType = "Slider"
-            elseif typeof(value) == "EnumItem" then dataType = "Keybind"
-            elseif typeof(value) == "table" then dataType = "Dropdown" end
+        if item and saved and item.type == saved.type then
+            if saved.type == "colorpicker" then
+                if saved.value and saved.value.r and saved.value.g and saved.value.b then
+                    item:set(Color3.fromRGB(saved.value.r, saved.value.g, saved.value.b))
 
-            local savedValue = value
-            if dataType == "ColorPicker" then savedValue = value:ToHex()
-            elseif dataType == "Keybind" then savedValue = tostring(value) end
+                    if item.setrainbow then
+                        item:setrainbow(saved.rainbow == true)
+                    end
+                end
 
-            table.insert(data.objects, { type = dataType, idx = flag, value = savedValue })
-        end
+            elseif saved.type == "keybind" then
+                if item.setbind and saved.key then
+                    item:setbind(saved.key)
+                end
 
-        local success, encoded = pcall(httpService.JSONEncode, httpService, data)
-        if success then
-            writefile(fullPath, encoded)
-            return true
-        end
-    end
+                if item.setmode and saved.mode then
+                    item:setmode(saved.mode)
+                end
 
-    function SaveManager:Load(name)
-        local file = self.Folder .. '/settings/' .. name .. '.json'
-        if not isfile(file) then return false end
+                if item.set and type(saved.state) == "boolean" then
+                    item:set(saved.state)
+                end
 
-        local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
-        if not success then return false end
+            elseif saved.type == "toggle" then
+                if item.set and type(saved.value) == "boolean" then
+                    item:set(saved.value)
+                end
 
-        for _, data in next, decoded.objects do
-            local finalValue = data.value
-            if data.type == "ColorPicker" then
-                finalValue = Color3.fromHex(data.value)
-            elseif data.type == "Keybind" then
-                local type, name = data.value:match("Enum%.(%w+)%.(.+)")
-                finalValue = Enum[type][name]
-            end
+            elseif saved.type == "slider" then
+                if item.set and type(saved.value) == "number" then
+                    item:set(saved.value)
+                end
 
-            -- Direct lookup in library.objects for the :Set() function
-            for _, obj in next, library.objects do
-                if typeof(obj) == "table" and obj.flag == data.idx and obj.Set then
-                    obj:Set(finalValue)
-                    break
+            elseif saved.type == "textbox" then
+                if item.set and type(saved.value) == "string" then
+                    item:set(saved.value)
+                end
+
+            elseif saved.type == "dropdown" then
+                if item.set then
+                    item:set(saved.value)
                 end
             end
         end
-        return true
     end
-
-    function SaveManager:Delete(name)
-        local file = self.Folder .. '/settings/' .. name .. '.json'
-        if isfile(file) then delfile(file) end
-    end
-
-    SaveManager:BuildFolderTree()
 end
 
-return SaveManager -- Crucial for use in other scripts
+function ConfigManager:EnsureFolder()
+    if not makefolder then
+        return false, "makefolder is not supported by your executor"
+    end
+
+    if not isfolder(self.Folder) then
+        makefolder(self.Folder)
+    end
+
+    return true
+end
+
+function ConfigManager:GetPath(name)
+    return string.format("%s/%s.json", self.Folder, name)
+end
+
+function ConfigManager:RefreshConfigList()
+    local ok, err = self:EnsureFolder()
+    if not ok then
+        warn(err)
+        return {}
+    end
+
+    if not listfiles then
+        warn("listfiles is not supported by your executor")
+        return {}
+    end
+
+    local files = listfiles(self.Folder)
+    local configs = {}
+
+    for _, file in ipairs(files) do
+        local name = file:match("([^/\\]+)%.json$")
+        if name then
+            table.insert(configs, name)
+        end
+    end
+
+    table.sort(configs)
+    return configs
+end
+
+function ConfigManager:CreateConfig(name)
+    local ok, err = self:EnsureFolder()
+    if not ok then
+        return false, err
+    end
+
+    if not name or name == "" then
+        return false, "No config name provided"
+    end
+
+    local path = self:GetPath(name)
+
+    if isfile and isfile(path) then
+        return false, "Config already exists"
+    end
+
+    if not writefile then
+        return false, "writefile is not supported by your executor"
+    end
+
+    writefile(path, HttpService:JSONEncode({}))
+    return true
+end
+
+function ConfigManager:SaveConfig(name)
+    local ok, err = self:EnsureFolder()
+    if not ok then
+        return false, err
+    end
+
+    if not name or name == "" then
+        return false, "No config name provided"
+    end
+
+    if not writefile then
+        return false, "writefile is not supported by your executor"
+    end
+
+    local path = self:GetPath(name)
+    local data = self:Save()
+
+    writefile(path, HttpService:JSONEncode(data))
+    return true
+end
+
+function ConfigManager:LoadConfig(name)
+    if not name or name == "" then
+        return false, "No config name provided"
+    end
+
+    local path = self:GetPath(name)
+
+    if not readfile or not isfile then
+        return false, "readfile/isfile is not supported by your executor"
+    end
+
+    if not isfile(path) then
+        return false, "Config does not exist"
+    end
+
+    local raw = readfile(path)
+    local decoded = HttpService:JSONDecode(raw)
+
+    self:Load(decoded)
+    return true
+end
+
+function ConfigManager:DeleteConfig(name)
+    if not name or name == "" then
+        return false, "No config name provided"
+    end
+
+    local path = self:GetPath(name)
+
+    if not delfile or not isfile then
+        return false, "delfile/isfile is not supported by your executor"
+    end
+
+    if not isfile(path) then
+        return false, "Config does not exist"
+    end
+
+    delfile(path)
+    return true
+end
+
+ConfigManager.AutoloadFile = ConfigManager.Folder .. "/autoload.txt"
+
+function ConfigManager:GetAutoloadPath()
+    return self.AutoloadFile
+end
+
+function ConfigManager:SetAutoload(name)
+    local ok, err = self:EnsureFolder()
+    if not ok then
+        return false, err
+    end
+
+    if not name or name == "" then
+        return false, "No config name provided"
+    end
+
+    if not writefile then
+        return false, "writefile is not supported by your executor"
+    end
+
+    writefile(self:GetAutoloadPath(), tostring(name))
+    return true
+end
+
+function ConfigManager:GetAutoload()
+    local ok, err = self:EnsureFolder()
+    if not ok then
+        return nil, err
+    end
+
+    if not readfile or not isfile then
+        return nil, "readfile/isfile is not supported by your executor"
+    end
+
+    local path = self:GetAutoloadPath()
+    if not isfile(path) then
+        return nil
+    end
+
+    local name = readfile(path)
+    if not name or name == "" then
+        return nil
+    end
+
+    return name
+end
+
+return ConfigManager
