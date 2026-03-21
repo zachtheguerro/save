@@ -1,6 +1,13 @@
+local HttpService = game:GetService("HttpService")
+
 local ConfigManager = {}
 ConfigManager.Items = {}
-ConfigManager.Folder = "Mana/settings"
+ConfigManager.Folder = ""
+
+function ConfigManager:SetFolder(folder)
+    self.Folder = folder
+    self.AutoloadFile = folder .. "/autoload.txt"
+end
 
 function ConfigManager:Register(flag, item)
     if not flag or flag == "" then return end
