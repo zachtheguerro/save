@@ -30,8 +30,8 @@ function ConfigManager:SerializeValue(item)
                 list = item.Keybind.cfg.list == true,
                 sync = item.Keybind.sync == true
             }
-        else
-            result.keybind = nil
+        elseif item.DefaultKeybind or item.HadKeybind then
+            result.keybind = false
         end
 
         return result
@@ -98,40 +98,46 @@ function ConfigManager:Load(data)
 					item:set(saved.state)
 				end
 
-        elseif saved.type == "toggle" then
-            if saved.keybind and item.keybind and not item.Keybind then
-                item:keybind({
-                    flag = saved.keybind.flag,
-                    default = saved.keybind.default,
-                    mode = saved.keybind.mode,
-                    state = saved.keybind.state,
-                    list = saved.keybind.list,
-                    sync = saved.keybind.sync
-                })
-            end
+            elseif saved.type == "toggle" then
+                if saved.keybind == false then
+                    if item.Keybind then
+                        item.Keybind:Remove()
+                        item.Keybind = nil
+                        item.KeybindConfig = nil
+                    end
 
-            if item.set and type(saved.value) == "boolean" then
-                item:set(saved.value)
-            end
-
-            if saved.keybind and item.Keybind then
-                if item.Keybind.setbind and saved.keybind.default then
-                    item.Keybind:setbind(saved.keybind.default)
+                elseif saved.keybind and item.keybind and not item.Keybind then
+                    item:keybind({
+                        flag = saved.keybind.flag,
+                        default = saved.keybind.default,
+                        mode = saved.keybind.mode,
+                        state = saved.keybind.state,
+                        list = saved.keybind.list,
+                        sync = saved.keybind.sync
+                    })
                 end
 
-                if item.Keybind.setmode and saved.keybind.mode then
-                    item.Keybind:setmode(saved.keybind.mode)
+                if item.set and type(saved.value) == "boolean" then
+                    item:set(saved.value)
                 end
 
-                if item.Keybind.set and type(saved.keybind.state) == "boolean" then
-                    item.Keybind:set(saved.keybind.state, true)
-                end
+                if type(saved.keybind) == "table" and item.Keybind then
+                    if item.Keybind.setbind and saved.keybind.default then
+                        item.Keybind:setbind(saved.keybind.default)
+                    end
 
-                if item.Keybind.cfg then
-                    item.Keybind.cfg.list = saved.keybind.list == true
-                end
-            end
+                    if item.Keybind.setmode and saved.keybind.mode then
+                        item.Keybind:setmode(saved.keybind.mode)
+                    end
 
+                    if item.Keybind.set and type(saved.keybind.state) == "boolean" then
+                        item.Keybind:set(saved.keybind.state, true)
+                    end
+
+                    if item.Keybind.cfg then
+                        item.Keybind.cfg.list = saved.keybind.list == true
+                    end
+                end
 			elseif saved.type == "slider" then
 				if item.set and type(saved.value) == "number" then
 					item:set(saved.value)
