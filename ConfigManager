@@ -21,15 +21,17 @@ function ConfigManager:SerializeValue(item)
             value = item.value
         }
 
-        if item.KeybindConfig then
+        if item.Keybind then
             result.keybind = {
-                flag = item.KeybindConfig.flag,
-                default = item.Keybind and item.Keybind.key and tostring(item.Keybind.key) or item.KeybindConfig.default,
-                mode = item.Keybind and item.Keybind.mode or item.KeybindConfig.mode,
-                state = item.Keybind and item.Keybind.value or item.KeybindConfig.state,
-                list = item.Keybind and item.Keybind.cfg and item.Keybind.cfg.list or item.KeybindConfig.list,
-                sync = item.KeybindConfig.sync
+                flag = item.Keybind.cfg.flag,
+                default = item.Keybind.key and tostring(item.Keybind.key) or nil,
+                mode = item.Keybind.mode,
+                state = item.Keybind.value,
+                list = item.Keybind.cfg.list == true,
+                sync = item.Keybind.sync == true
             }
+        else
+            result.keybind = nil
         end
 
         return result
