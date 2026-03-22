@@ -16,7 +16,23 @@ end
 
 function ConfigManager:SerializeValue(item)
     if item.type == "toggle" then
-        return { type = "toggle", value = item.value }
+        local result = {
+            type = "toggle",
+            value = item.value
+        }
+
+        if item.KeybindConfig then
+            result.keybind = {
+                flag = item.KeybindConfig.flag,
+                default = item.Keybind and item.Keybind.key and tostring(item.Keybind.key) or item.KeybindConfig.default,
+                mode = item.Keybind and item.Keybind.mode or item.KeybindConfig.mode,
+                state = item.Keybind and item.Keybind.value or item.KeybindConfig.state,
+                list = item.Keybind and item.Keybind.cfg and item.Keybind.cfg.list or item.KeybindConfig.list,
+                sync = item.KeybindConfig.sync
+            }
+        end
+
+        return result
     elseif item.type == "slider" then
         return { type = "slider", value = item.value }
     elseif item.type == "dropdown" then
@@ -80,10 +96,39 @@ function ConfigManager:Load(data)
 					item:set(saved.state)
 				end
 
-			elseif saved.type == "toggle" then
-				if item.set and type(saved.value) == "boolean" then
-					item:set(saved.value)
-				end
+        elseif saved.type == "toggle" then
+            if saved.keybind and item.keybind and not item.Keybind then
+                item:keybind({
+                    flag = saved.keybind.flag,
+                    default = saved.keybind.default,
+                    mode = saved.keybind.mode,
+                    state = saved.keybind.state,
+                    list = saved.keybind.list,
+                    sync = saved.keybind.sync
+                })
+            end
+
+            if item.set and type(saved.value) == "boolean" then
+                item:set(saved.value)
+            end
+
+            if saved.keybind and item.Keybind then
+                if item.Keybind.setbind and saved.keybind.default then
+                    item.Keybind:setbind(saved.keybind.default)
+                end
+
+                if item.Keybind.setmode and saved.keybind.mode then
+                    item.Keybind:setmode(saved.keybind.mode)
+                end
+
+                if item.Keybind.set and type(saved.keybind.state) == "boolean" then
+                    item.Keybind:set(saved.keybind.state, true)
+                end
+
+                if item.Keybind.cfg then
+                    item.Keybind.cfg.list = saved.keybind.list == true
+                end
+            end
 
 			elseif saved.type == "slider" then
 				if item.set and type(saved.value) == "number" then
