@@ -1,7 +1,7 @@
 return function(library)
 	local ConfigCreation = {}
 
-    function ConfigCreation:CreateConfiguration(Tab, library)
+    function ConfigCreation:CreateConfiguration(Tab)
         local MainSettings = Tab:section("Right", "Main", "fit")
         local Configuration = Tab:section("Left", "Configs", "fit")
     
@@ -417,6 +417,4 @@ return function(library)
             end
         end)
     end
-
-	return ConfigCreation
 end
