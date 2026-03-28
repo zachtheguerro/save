@@ -1,214 +1,250 @@
-local ConfigCreation = {}
+return function(library)
+	local ConfigCreation = {}
 
-function ConfigCreation:CreateConfiguration(window, library)
-    local Config = window:tab({name = "Config"})
-
-    local MainSettings = Config:section("Right", "Main", "fit")
-    local Configuration = Config:section("Left", "Configs", "fit")
-
-    MainSettings:label({name = "Accent Color"}):colorpicker({color = library.accent, callback = function(Value)
-        library.accent = Value
-        
-        for obj, _ in pairs(library.objects) do
-            if obj and obj.Parent then
-                local singleProp = obj:GetAttribute("IsAccent")
-                local accentProps = obj:GetAttribute("AccentProps")
-
-                if singleProp then
-                    local isSelected = obj:GetAttribute("Selected")
-                    local isPressed = obj:GetAttribute("Pressed")
-
-                    if (isSelected == true or isSelected == nil) and not isPressed then
-                        obj[singleProp] = Value
+    function ConfigCreation:CreateConfiguration(Tab, library)
+        local MainSettings = Tab:section("Right", "Main", "fit")
+        local Configuration = Tab:section("Left", "Configs", "fit")
+    
+        MainSettings:label({name = "Accent Color"}):colorpicker({color = library.accent, callback = function(Value)
+            library.accent = Value
+            
+            for obj, _ in pairs(library.objects) do
+                if obj and obj.Parent then
+                    local singleProp = obj:GetAttribute("IsAccent")
+                    local accentProps = obj:GetAttribute("AccentProps")
+    
+                    if singleProp then
+                        local isSelected = obj:GetAttribute("Selected")
+                        local isPressed = obj:GetAttribute("Pressed")
+    
+                        if (isSelected == true or isSelected == nil) and not isPressed then
+                            obj[singleProp] = Value
+                        end
+                    end
+    
+                    if accentProps then
+                        for prop in string.gmatch(accentProps, "[^,]+") do
+                            local enabled = obj:GetAttribute("Accent_" .. prop)
+                            local isPressed = obj:GetAttribute("Pressed")
+    
+                            if (enabled == true or enabled == nil) and not isPressed then
+                                obj[prop] = Value
+                            end
+                        end
                     end
                 end
-
-                if accentProps then
-                    for prop in string.gmatch(accentProps, "[^,]+") do
-                        local enabled = obj:GetAttribute("Accent_" .. prop)
-                        local isPressed = obj:GetAttribute("Pressed")
-
-                        if (enabled == true or enabled == nil) and not isPressed then
+            end
+        end})
+    
+        MainSettings:label({name = "Background Color"}):colorpicker({color = library.backgroundcolor, callback = function(Value)
+            library.backgroundcolor = Value
+            
+            for obj, _ in pairs(library.objects) do
+                if obj and obj.Parent then
+                    local backgroundProps = obj:GetAttribute("BackgroundProps")
+    
+                    if backgroundProps then
+                        for prop in string.gmatch(backgroundProps, "[^,]+") do
                             obj[prop] = Value
                         end
                     end
                 end
             end
-        end
-    end})
-
-    MainSettings:label({name = "Background Color"}):colorpicker({color = library.backgroundcolor, callback = function(Value)
-        library.backgroundcolor = Value
-        
-        for obj, _ in pairs(library.objects) do
-            if obj and obj.Parent then
-                local backgroundProps = obj:GetAttribute("BackgroundProps")
-
-                if backgroundProps then
-                    for prop in string.gmatch(backgroundProps, "[^,]+") do
-                        obj[prop] = Value
+        end})
+    
+        MainSettings:label({name = "Content Color"}):colorpicker({color = library.contentcolor, callback = function(Value)
+            library.contentcolor = Value
+            
+            for obj, _ in pairs(library.objects) do
+                if obj and obj.Parent then
+                    local Content = obj:GetAttribute("ContentProps")
+    
+                    if Content then
+                        for prop in string.gmatch(Content, "[^,]+") do
+                            obj[prop] = Value
+                        end
                     end
                 end
             end
-        end
-    end})
-
-    MainSettings:label({name = "Content Color"}):colorpicker({color = library.contentcolor, callback = function(Value)
-        library.contentcolor = Value
-        
-        for obj, _ in pairs(library.objects) do
-            if obj and obj.Parent then
-                local Content = obj:GetAttribute("ContentProps")
-
-                if Content then
-                    for prop in string.gmatch(Content, "[^,]+") do
-                        obj[prop] = Value
+        end})
+    
+        MainSettings:label({name = "Section Color"}):colorpicker({color = library.sectioncolor, callback = function(Value)
+            library.sectioncolor = Value
+            
+            for obj, _ in pairs(library.objects) do
+                if obj and obj.Parent then
+                    local sectionProps = obj:GetAttribute("SectionProps")
+    
+                    if sectionProps then
+                        for prop in string.gmatch(sectionProps, "[^,]+") do
+                            obj[prop] = Value
+                        end
                     end
                 end
             end
-        end
-    end})
-
-    MainSettings:label({name = "Section Color"}):colorpicker({color = library.sectioncolor, callback = function(Value)
-        library.sectioncolor = Value
-        
-        for obj, _ in pairs(library.objects) do
-            if obj and obj.Parent then
-                local sectionProps = obj:GetAttribute("SectionProps")
-
-                if sectionProps then
-                    for prop in string.gmatch(sectionProps, "[^,]+") do
-                        obj[prop] = Value
+        end})
+    
+        MainSettings:label({name = "Button Color"}):colorpicker({color = library.buttoncolor, callback = function(Value)
+            library.buttoncolor = Value
+            
+            for obj, _ in pairs(library.objects) do
+                if obj and obj.Parent then
+                    if obj:GetAttribute("ButtonDisabled") then
+                        continue
+                    end
+    
+                    local Buttons = obj:GetAttribute("Buttons")
+    
+                    if Buttons then
+                        for prop in string.gmatch(Buttons, "[^,]+") do
+                            obj[prop] = Value
+                        end
                     end
                 end
             end
-        end
-    end})
-
-    MainSettings:label({name = "Button Color"}):colorpicker({color = library.buttoncolor, callback = function(Value)
-        library.buttoncolor = Value
-        
-        for obj, _ in pairs(library.objects) do
-            if obj and obj.Parent then
-                if obj:GetAttribute("ButtonDisabled") then
-                    continue
-                end
-
-                local Buttons = obj:GetAttribute("Buttons")
-
-                if Buttons then
-                    for prop in string.gmatch(Buttons, "[^,]+") do
-                        obj[prop] = Value
+        end})
+    
+        local StrokeLabel = MainSettings:label({name = "Stroke Color"})
+    
+        StrokeLabel:colorpicker({color = library.stroke, callback = function(Value)
+            library.stroke = Value
+            
+            for obj, _ in pairs(library.objects) do
+                if obj and obj.Parent then
+                    if obj:GetAttribute("StrokeDisabled") then
+                        continue
+                    end
+    
+                    local strokeProps = obj:GetAttribute("StrokeProps")
+    
+                    if strokeProps then
+                        for prop in string.gmatch(strokeProps, "[^,]+") do
+                            obj[prop] = Value
+                        end
                     end
                 end
             end
-        end
-    end})
-
-    local StrokeLabel = MainSettings:label({name = "Stroke Color"})
-
-    StrokeLabel:colorpicker({color = library.stroke, callback = function(Value)
-        library.stroke = Value
-        
-        for obj, _ in pairs(library.objects) do
-            if obj and obj.Parent then
-                if obj:GetAttribute("StrokeDisabled") then
-                    continue
-                end
-
-                local strokeProps = obj:GetAttribute("StrokeProps")
-
-                if strokeProps then
-                    for prop in string.gmatch(strokeProps, "[^,]+") do
-                        obj[prop] = Value
+        end})
+    
+        StrokeLabel:colorpicker({color = library.stroke2, callback = function(Value)
+            library.stroke2 = Value
+            
+            for obj, _ in pairs(library.objects) do
+                if obj and obj.Parent then
+                    if obj:GetAttribute("Stroke2Disabled") then
+                        continue
+                    end
+    
+                    local strokeProps2 = obj:GetAttribute("StrokeProps2")
+    
+                    if strokeProps2 then
+                        for prop in string.gmatch(strokeProps2, "[^,]+") do
+                            obj[prop] = Value
+                        end
                     end
                 end
             end
-        end
-    end})
-
-    StrokeLabel:colorpicker({color = library.stroke2, callback = function(Value)
-        library.stroke2 = Value
-        
-        for obj, _ in pairs(library.objects) do
-            if obj and obj.Parent then
-                if obj:GetAttribute("Stroke2Disabled") then
-                    continue
-                end
-
-                local strokeProps2 = obj:GetAttribute("StrokeProps2")
-
-                if strokeProps2 then
-                    for prop in string.gmatch(strokeProps2, "[^,]+") do
-                        obj[prop] = Value
+        end})
+    
+        MainSettings:label({name = "Text Color"}):colorpicker({color = library.textcolor, callback = function(Value)
+            library.textcolor = Value
+            
+            for obj, _ in pairs(library.objects) do
+                if obj and obj.Parent then
+                    if obj:GetAttribute("TextDisabled") then
+                        continue
+                    end
+    
+                    local Textprops = obj:GetAttribute("TextProps")
+    
+                    if Textprops then
+                        for prop in string.gmatch(Textprops, "[^,]+") do
+                            obj[prop] = Value
+                        end
                     end
                 end
             end
-        end
-    end})
-
-    MainSettings:label({name = "Text Color"}):colorpicker({color = library.textcolor, callback = function(Value)
-        library.textcolor = Value
-        
-        for obj, _ in pairs(library.objects) do
-            if obj and obj.Parent then
-                if obj:GetAttribute("TextDisabled") then
-                    continue
-                end
-
-                local Textprops = obj:GetAttribute("TextProps")
-
-                if Textprops then
-                    for prop in string.gmatch(Textprops, "[^,]+") do
-                        obj[prop] = Value
+        end})
+    
+        MainSettings:label({name = "Misc's Color"}):colorpicker({color = library.misccolor, callback = function(Value)
+            library.misccolor = Value
+            
+            for obj, _ in pairs(library.objects) do
+                if obj and obj.Parent then
+    
+                    local miscProps = obj:GetAttribute("MiscProps")
+    
+                    if miscProps then
+                        for prop in string.gmatch(miscProps, "[^,]+") do
+                            obj[prop] = Value
+                        end
                     end
                 end
             end
-        end
-    end})
-
-    MainSettings:label({name = "Misc's Color"}):colorpicker({color = library.misccolor, callback = function(Value)
-        library.misccolor = Value
-        
-        for obj, _ in pairs(library.objects) do
-            if obj and obj.Parent then
-
-                local miscProps = obj:GetAttribute("MiscProps")
-
-                if miscProps then
-                    for prop in string.gmatch(miscProps, "[^,]+") do
-                        obj[prop] = Value
+        end})
+    
+        MainSettings:label({name = "Show Gui"}):keybind({default = Enum.KeyCode.RightControl, state = true, mode = "Toggle", callback = function(Value) library:toggle(Value) end})
+        MainSettings:toggle({name = "Show Watermark", state = true, callback = function(Value) watermark.Visible = Value end})
+        MainSettings:toggle({name = "Show Keybind List", state = true, callback = function(Value) KeybindContainer.Visible = Value end})
+        MainSettings:button({name = "Unload", confirm = true, callback = function() library:Unload() end})
+    
+        local cfgname = Configuration:textbox({name = "Config Name", flag = "cfgname", callback = function() end})
+        local cfglist = Configuration:dropdown({name = "Config List", flag = "selectedcfg", options = ConfigManager:RefreshConfigList(), max = 1, callback = function() end})
+    
+        Configuration:button({
+            name = "Create Config",
+            callback = function()
+                local name = library.flags["cfgname"]
+    
+                local success, message = ConfigManager:CreateConfig(name)
+                if success then
+                    cfglist:setoptions(ConfigManager:RefreshConfigList())
+                    cfglist:set(name)
+                    library:Notify({
+                        text = "Created config",
+                        time = 3,
+                        highlights = {tostring(name)}
+                    })
+    
+                    local success2, message2 = ConfigManager:SaveConfig(name)
+                    if success2 then
+                        cfglist:setoptions(ConfigManager:RefreshConfigList())
+                        cfglist:set(name)
+                        library:Notify({
+                            text = "Saved config",
+                            time = 3,
+                            highlights = {tostring(name)}
+                        })
+                    else
+                        library:Notify({
+                            text = "Save failed",
+                            time = 3,
+                            highlights = {tostring(message2)}
+                        })
                     end
+                else
+                    library:Notify({
+                        text = "Create failed",
+                        time = 3,
+                        highlights = {tostring(message)}
+                    })
                 end
             end
-        end
-    end})
-
-    MainSettings:label({name = "Show Gui"}):keybind({default = Enum.KeyCode.RightControl, state = true, mode = "Toggle", callback = function(Value) library:toggle(Value) end})
-    MainSettings:toggle({name = "Show Watermark", state = true, callback = function(Value) watermark.Visible = Value end})
-    MainSettings:toggle({name = "Show Keybind List", state = true, callback = function(Value) KeybindContainer.Visible = Value end})
-    MainSettings:button({name = "Unload", confirm = true, callback = function() library:Unload() end})
-
-    local cfgname = Configuration:textbox({name = "Config Name", flag = "cfgname", callback = function() end})
-    local cfglist = Configuration:dropdown({name = "Config List", flag = "selectedcfg", options = ConfigManager:RefreshConfigList(), max = 1, callback = function() end})
-
-    Configuration:button({
-        name = "Create Config",
-        callback = function()
-            local name = library.flags["cfgname"]
-
-            local success, message = ConfigManager:CreateConfig(name)
-            if success then
-                cfglist:setoptions(ConfigManager:RefreshConfigList())
-                cfglist:set(name)
-                library:Notify({
-                    text = "Created config",
-                    time = 3,
-                    highlights = {tostring(name)}
-                })
-
-                local success2, message2 = ConfigManager:SaveConfig(name)
-                if success2 then
+        })
+    
+        Configuration:button({
+            name = "Save Config",
+            confirm = true,
+            callback = function()
+                local selected = library.flags["selectedcfg"]
+                local name = selected
+    
+                if type(selected) == "table" then
+                    name = selected[1]
+                end
+    
+                local success, message = ConfigManager:SaveConfig(name)
+                if success then
                     cfglist:setoptions(ConfigManager:RefreshConfigList())
                     cfglist:set(name)
                     library:Notify({
@@ -220,203 +256,165 @@ function ConfigCreation:CreateConfiguration(window, library)
                     library:Notify({
                         text = "Save failed",
                         time = 3,
-                        highlights = {tostring(message2)}
+                        highlights = {tostring(message)}
                     })
                 end
-            else
-                library:Notify({
-                    text = "Create failed",
-                    time = 3,
-                    highlights = {tostring(message)}
-                })
             end
+        })
+    
+        Configuration:button({
+            name = "Load Config",
+            confirm = true,
+            callback = function()
+                local selected = library.flags["selectedcfg"]
+                local name = selected
+    
+                if type(selected) == "table" then
+                    name = selected[1]
+                end
+    
+                if not name or name == "" then
+                    library:Notify({
+                        text = "Load failed",
+                        time = 3,
+                        highlights = {"no config selected"}
+                    })
+                    return
+                end
+    
+                local success, message = ConfigManager:LoadConfig(name)
+                if success then
+                    library:Notify({
+                        text = "Loaded config",
+                        time = 3,
+                        highlights = {tostring(name)}
+                    })
+                else
+                    library:Notify({
+                        text = "Load failed",
+                        time = 3,
+                        highlights = {tostring(message)}
+                    })
+                end
+            end
+        })
+    
+        Configuration:button({
+            name = "Delete Config",
+            confirm = true,
+            callback = function()
+                local selected = library.flags["selectedcfg"]
+                local name = selected
+    
+                if type(selected) == "table" then
+                    name = selected[1]
+                end
+    
+                if not name or name == "" then
+                    library:Notify({
+                        text = "Delete failed",
+                        time = 3,
+                        highlights = {"no config selected"}
+                    })
+                    return
+                end
+    
+                local success, message = ConfigManager:DeleteConfig(name)
+                if success then
+                    cfglist:setoptions(ConfigManager:RefreshConfigList())
+                    cfglist:set(nil)
+                    library:Notify({
+                        text = "Deleted config",
+                        time = 3,
+                        highlights = {tostring(name)}
+                    })
+                else
+                    library:Notify({
+                        text = "Delete failed",
+                        time = 3,
+                        highlights = {tostring(message)}
+                    })
+                end
+            end
+        })
+    
+        Configuration:button({
+            name = "Set Autoload",
+            callback = function()
+                local selected = library.flags["selectedcfg"]
+                local name = selected
+    
+                if type(selected) == "table" then
+                    name = selected[1]
+                end
+    
+                if not name or name == "" then
+                    library:Notify({
+                        text = "Autoload failed",
+                        time = 3,
+                        highlights = {"no config selected"}
+                    })
+                    return
+                end
+    
+                local success, message = ConfigManager:SetAutoload(name)
+                if success then
+                    library:Notify({
+                        text = "Autoload set",
+                        time = 3,
+                        highlights = {tostring(name)}
+                    })
+                else
+                    library:Notify({
+                        text = "Autoload failed",
+                        time = 3,
+                        highlights = {tostring(message)}
+                    })
+                end
+            end
+        })
+    
+        local function getPing()
+            local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+            return math.floor(ping)
         end
-    })
-
-    Configuration:button({
-        name = "Save Config",
-        confirm = true,
-        callback = function()
-            local selected = library.flags["selectedcfg"]
-            local name = selected
-
-            if type(selected) == "table" then
-                name = selected[1]
+        local last = ""
+        library:connect(RunService.Heartbeat, function()
+            local time = os.date("%H:%M:%S")
+            local ping = getPing()
+    
+            local text = string.format("Mana | beta | %d ms | %s", ping, time)
+    
+            if text ~= last then
+                last = text
+                library:setwatermark(text)
             end
-
-            local success, message = ConfigManager:SaveConfig(name)
-            if success then
-                cfglist:setoptions(ConfigManager:RefreshConfigList())
-                cfglist:set(name)
-                library:Notify({
-                    text = "Saved config",
-                    time = 3,
-                    highlights = {tostring(name)}
-                })
-            else
-                library:Notify({
-                    text = "Save failed",
-                    time = 3,
-                    highlights = {tostring(message)}
-                })
+        end)
+        getgenv().library = library
+        task.spawn(function()
+            task.wait(1)
+    
+            local autoloadName = ConfigManager:GetAutoload()
+            if autoloadName then
+                local success, message = ConfigManager:LoadConfig(autoloadName)
+    
+                if success then
+                    cfglist:setoptions(ConfigManager:RefreshConfigList())
+                    cfglist:set(autoloadName)
+    
+                    library:Notify({
+                        text = "Autoloaded config",
+                        highlights = {tostring(autoloadName)},
+                        time = 3
+                    })
+                else
+                    library:Notify({
+                        text = "Autoload failed",
+                        highlights = {tostring(message)},
+                        time = 3
+                    })
+                end
             end
-        end
-    })
-
-    Configuration:button({
-        name = "Load Config",
-        confirm = true,
-        callback = function()
-            local selected = library.flags["selectedcfg"]
-            local name = selected
-
-            if type(selected) == "table" then
-                name = selected[1]
-            end
-
-            if not name or name == "" then
-                library:Notify({
-                    text = "Load failed",
-                    time = 3,
-                    highlights = {"no config selected"}
-                })
-                return
-            end
-
-            local success, message = ConfigManager:LoadConfig(name)
-            if success then
-                library:Notify({
-                    text = "Loaded config",
-                    time = 3,
-                    highlights = {tostring(name)}
-                })
-            else
-                library:Notify({
-                    text = "Load failed",
-                    time = 3,
-                    highlights = {tostring(message)}
-                })
-            end
-        end
-    })
-
-    Configuration:button({
-        name = "Delete Config",
-        confirm = true,
-        callback = function()
-            local selected = library.flags["selectedcfg"]
-            local name = selected
-
-            if type(selected) == "table" then
-                name = selected[1]
-            end
-
-            if not name or name == "" then
-                library:Notify({
-                    text = "Delete failed",
-                    time = 3,
-                    highlights = {"no config selected"}
-                })
-                return
-            end
-
-            local success, message = ConfigManager:DeleteConfig(name)
-            if success then
-                cfglist:setoptions(ConfigManager:RefreshConfigList())
-                cfglist:set(nil)
-                library:Notify({
-                    text = "Deleted config",
-                    time = 3,
-                    highlights = {tostring(name)}
-                })
-            else
-                library:Notify({
-                    text = "Delete failed",
-                    time = 3,
-                    highlights = {tostring(message)}
-                })
-            end
-        end
-    })
-
-    Configuration:button({
-        name = "Set Autoload",
-        callback = function()
-            local selected = library.flags["selectedcfg"]
-            local name = selected
-
-            if type(selected) == "table" then
-                name = selected[1]
-            end
-
-            if not name or name == "" then
-                library:Notify({
-                    text = "Autoload failed",
-                    time = 3,
-                    highlights = {"no config selected"}
-                })
-                return
-            end
-
-            local success, message = ConfigManager:SetAutoload(name)
-            if success then
-                library:Notify({
-                    text = "Autoload set",
-                    time = 3,
-                    highlights = {tostring(name)}
-                })
-            else
-                library:Notify({
-                    text = "Autoload failed",
-                    time = 3,
-                    highlights = {tostring(message)}
-                })
-            end
-        end
-    })
-
-    local function getPing()
-        local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
-        return math.floor(ping)
+        end)
     end
-    local last = ""
-    library:connect(RunService.Heartbeat, function()
-        local time = os.date("%H:%M:%S")
-        local ping = getPing()
-
-        local text = string.format("Mana | beta | %d ms | %s", ping, time)
-
-        if text ~= last then
-            last = text
-            library:setwatermark(text)
-        end
-    end)
-    getgenv().library = library
-    task.spawn(function()
-        task.wait(1)
-
-        local autoloadName = ConfigManager:GetAutoload()
-        if autoloadName then
-            local success, message = ConfigManager:LoadConfig(autoloadName)
-
-            if success then
-                cfglist:setoptions(ConfigManager:RefreshConfigList())
-                cfglist:set(autoloadName)
-
-                library:Notify({
-                    text = "Autoloaded config",
-                    highlights = {tostring(autoloadName)},
-                    time = 3
-                })
-            else
-                library:Notify({
-                    text = "Autoload failed",
-                    highlights = {tostring(message)},
-                    time = 3
-                })
-            end
-        end
-    end)
 end
-
-return ConfigCreation
