@@ -1,11 +1,12 @@
 local ConfigManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/zachtheguerro/ui/refs/heads/main/ConfigManager"))()
 ConfigManager:SetFolder("Mana/settings")
 
-return function(library, deps)
-    local ConfigCreation = {}
-    
-	local watermark = deps.watermark
-	local KeybindContainer = deps.KeybindContainer
+return function(library, stuff)
+	local ConfigCreation = {}
+
+	local ConfigManager = stuff.ConfigManager
+	local watermark = stuff.watermark
+	local KeybindContainer = stuff.KeybindContainer
 	local RunService = game:GetService("RunService")
 	local Stats = game:GetService("Stats")
 
