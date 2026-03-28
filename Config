@@ -1,4 +1,4 @@
-local ConfigManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/zachtheguerro/ui/refs/heads/main/ConfigManager"))()
+local ConfigManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/zachtheguerro/Mana/main/Config"))()
 
 return function(library)
 	local ConfigCreation = {}
