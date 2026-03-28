@@ -1,6 +1,6 @@
 local ConfigCreation = {}
 
-function ConfigCreation:CreateConfiguration(window)
+function ConfigCreation:CreateConfiguration(window, library)
     local Config = window:tab({name = "Config"})
 
     local MainSettings = Config:section("Right", "Main", "fit")
