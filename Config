@@ -417,4 +417,6 @@ return function(library)
             end
         end)
     end
+
+	return ConfigCreation
 end
